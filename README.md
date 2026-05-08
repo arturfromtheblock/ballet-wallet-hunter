@@ -271,12 +271,15 @@ Even with **1 million GPUs**, the search would take **~10¹⁶ years** — still
 
 ## Disclaimer
 
-This tool is provided for **educational and research purposes only**.
+This tool is **exclusively designed for the Bobby Lee CTF Challenge** (launched July 31, 2020) and may only be used for this specific purpose.
 
-- The search space for a complete 20-character passphrase is cryptographically infeasible
-- Only use this tool if you have **partial knowledge** of the passphrase
-- The author assumes no liability for any misuse or damages
-- Always verify the target address before attempting recovery
+- **Intended Use Only**: This tool is for participating in the official Ballet Wallet CTF challenge. Any other use is strictly prohibited.
+- **No Misuse**: Do not use this tool to attempt cracking wallets you do not own or have explicit permission to test.
+- **Cryptographic Reality**: The search space for a complete 20-character passphrase is cryptographically infeasible without additional hints or partial knowledge.
+- **No Liability**: The author assumes no liability for any misuse, damages, or legal consequences arising from unauthorized use of this tool.
+- **Verify First**: Always verify you have legitimate rights to attempt recovery before using this software.
+
+By using this tool, you agree to use it solely for the Bobby Lee CTF Challenge and accept full responsibility for compliance with all applicable laws.
 
 ## Donate
 
