@@ -3,7 +3,7 @@
 <p align="center">
   <span>A BIP38 brute-force tool written in Go, designed to crack the **CTF Challenge** — created by Ballet Wallet founder Bobby Lee on July 31, 2020.</span>
 
-<img src="https://raw.githubusercontent.com/arturfromtheblock/ballet-wallet-hunter/refs/heads/master/img/screenshot.png">
+<img src="https://raw.githubusercontent.com/arturfromtheblock/ballet-wallet-hunter/refs/heads/master/img/screen.png">
 
 ---
 
