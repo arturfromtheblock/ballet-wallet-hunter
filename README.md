@@ -2,6 +2,7 @@
 <br>
 <p align="center">
   <span>A Go-based BIP38 passphrase search tool built for educational analysis of the Ballet Wallet CTF challenge published by Bobby Lee on July 31, 2020.</span>
+  ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white) ![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=flat&logo=ubuntu&logoColor=white)
 </p>
 
 <img src="https://raw.githubusercontent.com/arturfromtheblock/ballet-wallet-hunter/refs/heads/master/img/balletwallethunter.png">
