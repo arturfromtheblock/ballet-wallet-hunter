@@ -1,67 +1,66 @@
 <h1 align="center">Ballet Wallet Hunter</h1>
 <br>
 <p align="center">
-  <span>A BIP38 brute-force tool written in Go, designed to crack the **CTF Challenge** — created by Ballet Wallet founder Bobby Lee on July 31, 2020.</span>
+  <span>A Go-based BIP38 passphrase search tool built for educational analysis of the Ballet Wallet CTF challenge published by Bobby Lee on July 31, 2020.</span>
+</p>
 
-<img src="https://raw.githubusercontent.com/arturfromtheblock/ballet-wallet-hunter/refs/heads/master/img/screen.png">
+<img src="https://raw.githubusercontent.com/arturfromtheblock/ballet-wallet-hunter/refs/heads/master/img/balletwallethunter.png">
 
 ---
 
 ## What is This?
 
-On **July 31, 2020**, the founder of Ballet Wallet launched a public Capture The Flag (CTF) challenge to demonstrate the security of Ballet's BIP38-encrypted physical Bitcoin wallets.
+On **July 31, 2020**, Ballet Wallet founder Bobby Lee published a public Capture The Flag (CTF) challenge to demonstrate the security properties of Ballet’s BIP38-based wallet design.
 
 ### The Challenge Setup
 
 The challenge consisted of **two wallets**:
 
-- **Wallet #1**: Contains **1 BTC** — BIP38 encrypted private key (EPK) + Confirmation Code provided. The passphrase is unknown and must be recovered.
+- **Wallet #1**: Contains **1 BTC**. A BIP38 encrypted private key (EPK) and confirmation code are provided. The passphrase is unknown and must be recovered.
   - **Target Address:** `1JxWyNrkgYvgsHu8hVQZqTXEB9RftRGP5m`
   - **EPK:** `6PnQmAyBky9ZXJyZBv9QSGRUXkKh9HfnVsZWPn4YtcwoKy5vufUgfA3Ld7`
   - **Confirmation Code:** `cfrm38VUGuohnUuosBHHzLjQoZ2oPTyt1tGPLsfQcKq2gXT8fkC6XJAyc4sJkXrrpy22zMVbnP5`
 
-- **Wallet #2**: It contains 1 BTC. No EPK is provided, but the passphrase is known. This wallet shows that having the passphrase and confirmation code is useless without the EPK (encoded private key).
-  - **Target:** `1QGtbKxx6FKDD66LwnrzHCAHmyZ7mDHqC4`
+- **Wallet #2**: Contains **1 BTC**. The passphrase and confirmation code are known, but the encrypted private key is not provided. This demonstrates that a passphrase and confirmation code alone are not sufficient to reconstruct the private key or spend funds.
+  - **Target Address:** `1QGtbKxx6FKDD66LwnrzHCAHmyZ7mDHqC4`
   - **Passphrase:** `594Y-L2RW-4ME7-2XVX-9B41`
   - **Confirmation Code:** `cfrm38VUh2i5qzzCqedWtc8ekFxT3UpcQnfb42JRrLbTWCRTfgVTCXqLp3FYxqiyQDo4D3DyWzY`
 
 ### The Passphrase Pattern
 
-Ballet Wallet passphrases follow a specific pattern:
+Ballet Wallet passphrases follow a fixed-format pattern:
 
-```
+```text
 XXXX-XXXX-XXXX-XXXX-XXXX
 ```
 
-Where each `X` is a character from `A-Z` or `0-9` (36 possibilities per position).
+Each `X` is an uppercase alphanumeric character from `A-Z` or `0-9`, giving **36 possibilities per position**.
 
-**This tool attempts to brute-force the passphrase for Wallet #1**, using optimized cryptographic operations and pattern masking to reduce the search space.
+**This tool attempts to search the passphrase for Wallet #1** using pattern masking, precomputed values, and parallel execution to reduce avoidable overhead. The full 20-character space remains cryptographically infeasible without additional hints or partial knowledge.
 
 ### Why This Matters
 
-The challenge proves a critical security concept: **even if someone knows your passphrase, they cannot access your Bitcoin without the physical Ballet Wallet card** (which contains the EPK). Conversely, even if someone has your encrypted private key, they cannot decrypt it without the passphrase.
-
-Our goal is to test the boundaries of this security model by attempting to recover the unknown passphrase through computational brute force.
+The challenge illustrates an important security property of BIP38 in the EC-multiply workflow used by Ballet: access to funds requires both the encrypted private key material and the correct passphrase. A confirmation code can help verify that a passphrase matches the intended wallet setup, but it does not reveal the private key.
 
 ## Features
 
-- **Pattern Masking System**: Fix known characters, randomize unknown ones
-  - Example: `A1XX-XXXX-B2XX-XXXX-C3XX` → only 14 positions to brute-force
-- **Multi-threaded Workers**: Utilizes all CPU cores via goroutines
-- **Precomputed BIP38 Data**: Eliminates redundant decoding operations
-- **Fast Scrypt Path**: Optimized scrypt parameters for confirmation checks
-- **Live Status Output**: Real-time rate and last-tested key display
+- **Pattern Masking System**: Fix known characters and search only unknown positions
+  - Example: `A1XX-XXXX-B2XX-XXXX-C3XX` → only 14 unknown positions remain
+- **Parallel Workers**: Uses goroutines across available CPU cores
+- **Precomputed Data**: Avoids repeating static BIP38 parsing work
+- **Confirmation-Code-Aware Verification**: Uses challenge-specific data to reduce unnecessary work where possible
+- **Live Status Output**: Shows current rate and last-tested candidate
 - **Cross-platform**: Native builds for Intel and Apple Silicon Macs
 
 ## Search Space Reality Check
 
-| Pattern                    | Positions | Search Space     | Time @ 40/s |
-| -------------------------- | --------- | ---------------- | ----------- |
-| `XXXX-XXXX-XXXX-XXXX-XXXX` | 20        | 36²⁰ ≈ 1.34×10³¹ | ~10²² years |
-| `A1XX-XXXX-B2XX-XXXX-C3XX` | 14        | 36¹⁴ ≈ 6.14×10²¹ | ~10¹⁵ years |
-| `2026-XXXX-XXXX-XXXX-XXXX` | 16        | 36¹⁶ ≈ 7.96×10²⁴ | ~10¹⁸ years |
+| Pattern                    | Unknown Positions | Search Space       | Time @ 40/s   |
+| :------------------------- | :---------------- | :----------------- | :------------ |
+| `XXXX-XXXX-XXXX-XXXX-XXXX` | 20                | 36²⁰ ≈ 1.34×10³¹   | ~10²² years   |
+| `A1XX-XXXX-B2XX-XXXX-C3XX` | 14                | 36¹⁴ ≈ 6.14×10²¹   | ~10¹³ years   |
+| `2026-XXXX-XXXX-XXXX-XXXX` | 16                | 36¹⁶ ≈ 7.96×10²⁴   | ~10¹⁶ years   |
 
-**This tool is for educational and testing purposes. The full search space is cryptographically infeasible to brute-force without additional hints or partial passphrase knowledge.**
+**This project is intended for educational analysis and authorized testing only. Without additional constraints, the full search space is not practically brute-forceable.**
 
 ## Installation
 
@@ -70,12 +69,11 @@ Our goal is to test the boundaries of this security model by attempting to recov
 - macOS (Intel or Apple Silicon)
 - Go
 
-```
-# install brew
+```bash
+# Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-
-# install Go
+# Install Go
 brew install go
 ```
 
@@ -86,34 +84,34 @@ brew install go
 git clone https://github.com/arturfromtheblock/ballet-wallet-hunter.git
 cd ballet-wallet-hunter
 
-# Build for your architecture
+# Build for the host architecture
 make native
 
 # Or manually:
-# Apple Silicon:
+
+# Apple Silicon
 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o bwh-silicon -ldflags="-s -w" main.go
 
-# Intel Mac:
+# Intel Mac
 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bwh-intel -ldflags="-s -w" main.go
 
-# Go
+# Generic local build
 go build -o bwh -ldflags="-s -w" main.go
-
 ```
 
 ## Configuration
 
 Create a `config.txt` file in the project directory:
 
-```
-# BIP38 Encrypted Private Key (starts with 6P)
-EPK=6PfLGnQs6VZnrN1VKPuZ8YzovfC7gB3Nqa1CZrKp5R6v1B1
+```text
+# BIP38 encrypted private key (Base58Check, usually starts with 6P)
+EPK=6PnQmAyBky9ZXJyZBv9QSGRUXkKh9HfnVsZWPn4YtcwoKy5vufUgfA3Ld7
 
 # Target Bitcoin address (optional, for logging)
 TARGET_ADDRESS=1JxWyNrkgYvgsHu8hVQZqTXEB9RftRGP5m
 
-# BIP38 Confirmation Code (optional, for faster verification)
-CONFIRMATION_CODE= cfrm38VUGuohnUuosBHHzLjQoZ2oPTyt1tGPLsfQcKq2gXT8fkC6XJAyc4sJkXrrpy22zMVbnP5
+# BIP38 confirmation code (optional, for challenge-specific verification)
+CONFIRMATION_CODE=cfrm38VUGuohnUuosBHHzLjQoZ2oPTyt1tGPLsfQcKq2gXT8fkC6XJAyc4sJkXrrpy22zMVbnP5
 
 # Search mode: "random" or "sequential"
 MODE=random
@@ -121,18 +119,17 @@ MODE=random
 # Number of workers (0 = auto-detect CPU cores)
 WORKERS=0
 
-# Passphrase pattern: X = random, anything else = fixed
-# Example: A1XX-XXXX-B2XX-XXXX-C3XX
+# Passphrase pattern: X = unknown alphanumeric position, anything else = fixed
 PATTERN=XXXX-XXXX-XXXX-XXXX-XXXX
 ```
 
 ### Environment Variables
 
-You can also set configuration via environment variables:
+You can also configure the tool with environment variables:
 
 ```bash
-export BIP38_EPK="6Pf..."
-export BIP38_TARGET="1JxWy..."
+export BIP38_EPK="6PnQmAyBky9ZXJyZBv9QSGRUXkKh9HfnVsZWPn4YtcwoKy5vufUgfA3Ld7"
+export BIP38_TARGET="1JxWyNrkgYvgsHu8hVQZqTXEB9RftRGP5m"
 export BIP38_PATTERN="A1XX-XXXX-B2XX-XXXX-C3XX"
 export BIP38_WORKERS=8
 ./bwh-silicon
@@ -144,151 +141,140 @@ export BIP38_WORKERS=8
 # Run with config.txt
 ./bwh-silicon
 
-# Expected output:
-# 2026/05/08 13:33:26 [18.4s] Tried: 700 | Rate: 38.0/s | Last Key: QO2Z-A8JA-K4Z7-CRY3-BD2S
+# Example output:
+# ⚡ [760.8s] 28773 tested | 37.8/s | Last: JQKY-TRMH-77L1-13XC-CGLK
 ```
 
 ### Pattern Syntax
 
-| Character    | Meaning                     |
-| ------------ | --------------------------- |
-| `X` or `x`   | Random character (A-Z, 0-9) |
-| `A-Z`, `0-9` | Fixed character             |
-| `-`          | Fixed separator             |
+| Character      | Meaning                     |
+| -------------- | --------------------------- |
+| `X` or `x`     | Unknown alphanumeric (`A-Z`, `0-9`) |
+| `?`            | Unknown numeric only (`0-9`) |
+| `A-Z`, `0-9`   | Fixed character             |
+| `-`            | Fixed separator             |
 
 **Examples:**
 
-- `XXXX-XXXX-XXXX-XXXX-XXXX` — Full random (36²⁰ combinations)
-- `2026-XXXX-XXXX-XXXX-XXXX` — Year fixed, rest random (36¹⁶ combinations)
-- `TEST-XXXX-XXXX-XXXX-XXXX` — Word fixed, rest random (36¹⁶ combinations)
-- `A1XX-XXXX-B2XX-XXXX-C3XX` — Multiple fixed characters (36¹⁴ combinations)
+- `XXXX-XXXX-XXXX-XXXX-XXXX` — Full search space (36²⁰ combinations)
+- `2026-XXXX-XXXX-XXXX-XXXX` — Prefix fixed, rest unknown (36¹⁶ combinations)
+- `TEST-XXXX-XXXX-XXXX-XXXX` — Word fixed, rest unknown (36¹⁶ combinations)
+- `A1XX-XXXX-B2XX-XXXX-C3XX` — Multiple fixed positions (36¹⁴ combinations)
+- `X?XX-????-XXXX-?X?X-XXX?` — Mixed pattern with numeric-only positions (36¹² × 10⁸ ≈ 4.74×10²⁶ combinations)
 
 ## Performance Tips
 
-1. **Use Pattern Masking**: Every fixed character reduces the search space by factor 36
-2. **Native Binary**: Always use the ARM64 build on Apple Silicon (avoid Rosetta 2)
-3. **CPU Priority**: Run with highest priority:
-   ```bash
-   nice -n -20 ./bwh-silicon
-   ```
-4. **Close Other Apps**: Scrypt is memory-hard and CPU-intensive
+1. **Use Pattern Masking**: Every fixed alphanumeric position reduces the search space by a factor of 36.
+2. **Use a Native Binary**: On Apple Silicon, prefer the ARM64 build instead of Rosetta.
+3. **Avoid Background Load**: BIP38 verification is CPU- and memory-intensive.
+4. **Benchmark on Your Own Hardware**: Actual throughput depends heavily on implementation details, CPU architecture, memory bandwidth, and whether confirmation-code checks can short-circuit parts of the pipeline.
 
 ## Technical Details
 
-### Why BIP38 is So Hard to Crack
+### Why BIP38 is Hard to Search
 
-BIP38 uses **scrypt** as its key derivation function, deliberately designed to be **memory-hard and CPU-intensive**. This makes brute-force attacks extremely expensive, even for powerful hardware.
+BIP38 uses **scrypt** as a key-derivation function specifically to make passphrase guessing expensive. Scrypt is deliberately computationally heavy and memory-intensive, which makes brute-force attacks far slower than attacks against simple hash-based formats.
 
-#### Scrypt Parameters in BIP38
+### BIP38 Modes
 
-For each passphrase attempt, BIP38 requires **two scrypt operations**:
+BIP38 supports more than one workflow:
 
-**Scrypt #1 (The Expensive One):**
+- **Non-EC-multiply mode**: Direct encryption of a private key with a passphrase
+- **EC-multiply mode**: A two-party workflow where one side can generate encrypted key material from a passpoint without learning the final passphrase-derived private key
 
-```
+The Ballet challenge uses the **EC-multiply** workflow, which is why confirmation codes and passpoint-based derivation are relevant here.
+
+### Scrypt Parameters Used by BIP38
+
+In the EC-multiply workflow, the relevant derivation steps are:
+
+**Scrypt #1:**
+
+```text
 scrypt(passphrase, ownerSalt, N=16384, r=8, p=8, dkLen=32)
 ```
 
-**Scrypt #2 (The Fast One):**
+**Scrypt #2:**
 
-```
-scrypt(passpoint, seedbc, N=1024, r=1, p=1, dkLen=64)
-```
-
-#### What Do These Parameters Mean?
-
-| Parameter | Value | Meaning                                                                                   |
-| --------- | ----- | ----------------------------------------------------------------------------------------- |
-| **N**     | 16384 | CPU/Memory cost factor. Must be a power of 2. Each doubling doubles the computation time. |
-| **r**     | 8     | Block size parameter. Affects memory usage. Each doubling doubles memory consumption.     |
-| **p**     | 8     | Parallelization factor. Number of parallel scrypt threads.                                |
-| **dkLen** | 32    | Derived key length in bytes.                                                              |
-
-#### Memory and Computation Cost
-
-The total memory required for one scrypt operation is approximately:
-
-```
-Memory = 128 × N × r × p bytes
-       = 128 × 16384 × 8 × 8
-       = 134,217,728 bytes
-       = 128 MB per operation
+```text
+scrypt(passpoint, addressHash + ownerEntropy, N=1024, r=1, p=1, dkLen=64)
 ```
 
-For **Scrypt #1**, this means:
+These parameters are defined by the BIP38 specification for the relevant workflows.
 
-- **128 MB RAM** allocated per passphrase attempt
-- **Sequential memory access** pattern (cache-unfriendly)
-- **~100-200 ms** per operation on modern CPUs
-- Cannot be effectively parallelized on GPU due to memory constraints
+### What the Parameters Mean
 
-#### Why GPUs Don't Help Much
+| Parameter | Value | Meaning |
+| --------- | ----- | ------- |
+| **N**     | 16384 | CPU/memory cost factor; must be a power of 2 |
+| **r**     | 8     | Block size parameter affecting memory usage |
+| **p**     | 8     | Parallelization parameter |
+| **dkLen** | 32    | Output length in bytes for the first derivation |
 
-Scrypt was specifically designed to resist GPU and ASIC acceleration:
+### Memory and Computation Cost
 
-1. **Memory-hard**: Requires 128 MB per thread — GPUs have limited memory per core
-2. **Random access pattern**: Constant cache misses, negating GPU memory advantages
-3. **Sequential dependencies**: Each block depends on the previous, limiting parallelism
+For the expensive scrypt step, the dominant working memory is on the order of:
 
-A high-end GPU might achieve **2-5x** speedup over a CPU, but not the **1000x** typical for SHA-256 mining.
+```text
+Memory ≈ 128 × N × r bytes
+       ≈ 128 × 16384 × 8
+       ≈ 16 MiB
+```
 
-#### The Full BIP38 Decryption Pipeline
+Actual total memory usage may be higher depending on implementation details, buffering, concurrency, and how many workers run at once.
 
-For each passphrase attempt:
+This makes each passphrase attempt expensive compared with ordinary password hashing:
 
-1. **Base58-decode** the EPK → extract flags, salt, encrypted parts
-2. **Scrypt #1** (expensive): Derive prefactorA from passphrase + ownerSalt
-3. **SHA-256 twice**: Compute passFactor (or prefactorB + hash)
-4. **EC Point Multiplication**: Compute passpoint = passFactor × G (secp256k1)
-5. **Scrypt #2** (fast): Derive AES key from passpoint + address hash
-6. **AES-256 Decrypt**: Decrypt encryptedpart1 and encryptedpart2
-7. **SHA-256 twice**: Compute factorb from decrypted seedb
-8. **EC Point Multiplication**: Compute final private key
-9. **Address Generation**: Derive Bitcoin address from public key
-10. **Checksum Verification**: Compare first 4 bytes with embedded hash
+- Significant memory pressure per worker
+- Heavy CPU usage
+- Poor scaling compared with simpler hash functions
+- Strong resistance to massive acceleration relative to SHA-256-style workloads
 
-**Steps 2, 4, 5, and 8 are the bottlenecks.** Step 2 (scrypt N=16384) alone accounts for ~90% of the total computation time.
+### Why GPUs Help Less Than With Simple Hashes
+
+Scrypt was designed to reduce the advantage of hardware that excels at massively parallel, low-memory hashing. GPUs can still accelerate scrypt workloads, but the speedup is much smaller than the extreme gains often seen with simpler algorithms such as SHA-256.
+
+### The EC-Multiply Verification Pipeline
+
+For a challenge like this, a candidate passphrase typically flows through these stages:
+
+1. Decode the encrypted key and extract static metadata
+2. Run **scrypt #1** with the candidate passphrase and owner salt
+3. Derive the passfactor and passpoint
+4. Use **scrypt #2** with the passpoint and address-derived data
+5. Decrypt the encrypted seed material
+6. Derive the final factor and private key material
+7. Reconstruct the address and compare it against the embedded hash and expected target
+
+The main bottlenecks are the first scrypt derivation, elliptic-curve operations, and the second derivation/decryption path.
 
 ### Performance Reality
 
-| Hardware                | Scrypt #1 / sec | Keys / sec | 36²⁰ search time |
-| ----------------------- | --------------- | ---------- | ---------------- |
-| MacBook M1 (8 cores)    | ~40             | ~40        | ~10²² years      |
-| High-end CPU (16 cores) | ~80             | ~80        | ~10²² years      |
-| RTX 4090 GPU            | ~200            | ~200       | ~10²¹ years      |
-| Custom FPGA             | ~500            | ~500       | ~10²¹ years      |
+Practical throughput varies substantially by hardware and implementation. For that reason, this repository reports live measured rates during execution instead of claiming universal benchmark numbers.
 
-Even with **1 million GPUs**, the search would take **~10¹⁶ years** — still vastly longer than the age of the universe (~1.38×10¹⁰ years).
+Even so, the full 20-character Ballet passphrase format remains astronomically large:
 
-### Optimizations in This Tool
-
-- **Precomputed Data**: BIP38 decoding, salt extraction, and address hash done once
-- **Pattern Masking**: Reduces search space when partial passphrase is known
-- **Batch Processing**: Reduces channel overhead between goroutines
-- **Atomic Counters**: Lock-free statistics tracking
-- **Minimal Allocations**: Reused buffers to reduce GC pressure
-- **Native Builds**: ARM64 on Apple Silicon avoids Rosetta 2 overhead
+- 36²⁰ ≈ 1.34×10³¹ total combinations
+- At 40 checks per second, exhaustive search would take roughly 10²² years
+- Even very large parallel hardware deployments do not make the unconstrained full search practical
 
 ## Disclaimer
 
-This tool is **exclusively designed for the Bobby Lee CTF Challenge** (launched July 31, 2020) and may only be used for this specific purpose.
+This project is published for **educational analysis, research, and authorized recovery testing**.
 
-- **Intended Use Only**: This tool is for participating in the official Ballet Wallet CTF challenge. Any other use is strictly prohibited.
-- **No Misuse**: Do not use this tool to attempt cracking wallets you do not own or have explicit permission to test.
-- **Cryptographic Reality**: The search space for a complete 20-character passphrase is cryptographically infeasible without additional hints or partial knowledge.
-- **No Liability**: The author assumes no liability for any misuse, damages, or legal consequences arising from unauthorized use of this tool.
-- **Verify First**: Always verify you have legitimate rights to attempt recovery before using this software.
+- Use it only on wallets you own or have explicit permission to test.
+- Do not use it for unauthorized access attempts.
+- The full 20-character Ballet-format search space is not practically brute-forceable without additional constraints.
+- The author assumes no liability for misuse, damages, or legal consequences arising from unauthorized use.
 
-By using this tool, you agree to use it solely for the Bobby Lee CTF Challenge and accept full responsibility for compliance with all applicable laws.
+By using this software, you accept responsibility for complying with all applicable laws and for ensuring that your use is authorized.
 
 ## Donate
 
-```
+```text
 bc1qlpdkr5djv0mpz948wh2dutq48qnaazaauxxlh0
 ```
 
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
-_Happy Hunting!_ 🎯
